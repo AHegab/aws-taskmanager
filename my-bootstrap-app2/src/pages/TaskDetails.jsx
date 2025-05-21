@@ -28,9 +28,33 @@ export default function TaskDetail() {
   useEffect(() => {
     async function loadTask() {
       try {
+        console.log('Loading task with ID:', id);
+        
         const resp = await api.get(`/tasks/${id}`);
-        setTask(resp.data);
+        console.log('raw task payload:', resp.data);
+
+        // 1) Unwrap the envelope
+        let data = resp.data;
+        if (data && typeof data.body === 'string') {
+          data = JSON.parse(data.body);
+        } else if (data.task) {
+          data = data.task;
+        }
+
+        // 2) Extract created_at / updated_at from metadata.activity_log
+        if (data.metadata?.activity_log) {
+          const logs = data.metadata.activity_log;
+          const findTime = label => {
+            const entry = logs.find(l => l.startsWith(label + ' at '));
+            return entry ? entry.split(' at ')[1] : null;
+          };
+          data.created_at = findTime('Created');
+          data.updated_at = findTime('Updated');
+        }
+
+        setTask(data);
       } catch (err) {
+        console.error(err);
         setError(err.message || 'Failed to load task');
       } finally {
         setLoading(false);
@@ -43,26 +67,26 @@ export default function TaskDetail() {
     setSaving(true);
     try {
       const formData = new FormData();
-
-      // 1) pack all updatable fields (including existing attachments)
-      const payload = {
-        title:       task.title,
-        description: task.description || '',
-        status:      task.status || 'Pending',
-        attachments: task.attachments || []
-      };
-      formData.append('data', JSON.stringify(payload));
-
-      // 2) append any new files
+      // pack updatable fields
+      formData.append(
+        'data',
+        JSON.stringify({
+          title:       task.title,
+          description: task.description || '',
+          status:      task.status || 'Pending',
+          attachments: task.attachments || []
+        })
+      );
+      // append any new files
       selectedFiles.forEach(f => formData.append('attachments', f));
 
-      // 3) send multipart/form-data
-      await api.put(`/tasks/${id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // let Axios set the multipart boundary for you
+      await api.put(`/tasks/${id}`, formData);
+
       navigate('/tasks');
     } catch (err) {
-      setError(err.message || 'Failed to save changes');
+      console.error('Save error:', err.response || err);
+      setError(err.response?.data || err.message || 'Failed to save changes');
     } finally {
       setSaving(false);
     }
@@ -75,15 +99,16 @@ export default function TaskDetail() {
       await api.delete(`/tasks/${id}`);
       navigate('/tasks');
     } catch (err) {
-      setError(err.message || 'Failed to delete task');
+      console.error('Delete error:', err.response || err);
+      setError(err.response?.data || err.message || 'Failed to delete task');
     } finally {
       setDeleting(false);
     }
   };
 
-  if (loading) return <Container className="mt-4"><Spinner animation="border" /></Container>;
-  if (error)   return <Container className="mt-4"><Alert variant="danger">{error}</Alert></Container>;
-  if (!task)   return <Container className="mt-4"><Alert variant="warning">Task not found</Alert></Container>;
+  if (loading)   return <Container className="mt-4"><Spinner animation="border" /></Container>;
+  if (error)     return <Container className="mt-4"><Alert variant="danger">{error}</Alert></Container>;
+  if (!task)     return <Container className="mt-4"><Alert variant="warning">Task not found</Alert></Container>;
 
   return (
     <Container className="mt-4">
@@ -95,7 +120,7 @@ export default function TaskDetail() {
           <Col sm={10}>
             <Form.Control
               type="text"
-              value={task.title}
+              value={task.title || ''}
               onChange={e => setTask({ ...task, title: e.target.value })}
             />
           </Col>
@@ -129,12 +154,20 @@ export default function TaskDetail() {
 
         {/* Read-only fields */}
         <ListGroup className="mb-3">
-          <ListGroup.Item><strong>User ID:</strong> {task.user_id}</ListGroup.Item>
           <ListGroup.Item>
-            <strong>Created:</strong> {new Date(task.created_at).toLocaleString()}
+            <strong>User ID:</strong> {task.user_id}
           </ListGroup.Item>
           <ListGroup.Item>
-            <strong>Last Updated:</strong> {new Date(task.updated_at).toLocaleString()}
+            <strong>Created:</strong>{' '}
+            {task.created_at
+              ? new Date(task.created_at).toLocaleString()
+              : '—'}
+          </ListGroup.Item>
+          <ListGroup.Item>
+            <strong>Last Updated:</strong>{' '}
+            {task.updated_at
+              ? new Date(task.updated_at).toLocaleString()
+              : '—'}
           </ListGroup.Item>
         </ListGroup>
 
@@ -144,7 +177,7 @@ export default function TaskDetail() {
           <ListGroup className="mb-3">
             {task.attachments.map((url, i) => (
               <ListGroup.Item key={i}>
-                <a href={url} target="_blank" rel="noopener noreferrer">
+                <a href={url} target="_blank" rel="noreferrer">
                   {url.split('/').pop()}
                 </a>
               </ListGroup.Item>

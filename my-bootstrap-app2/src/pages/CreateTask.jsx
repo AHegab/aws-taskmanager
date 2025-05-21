@@ -17,7 +17,7 @@ export default function CreateTask() {
   const navigate = useNavigate();
 
   // TODO: Replace with real logged-in user ID
-  const userId = '5944299f-3937-4338-b39a-c3f3eb3f7e16';
+  const userId = '32548b14-5f37-4cf1-8928-9a5f59efdfc6';
 
   const [title, setTitle]             = useState('');
   const [description, setDescription] = useState('');
