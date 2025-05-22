@@ -10,7 +10,9 @@ import { useNavigate } from 'react-router-dom'
 
 export default function CreateTask() {
   const navigate = useNavigate()
-  const userId   = '32548b14-5f37-4cf1-8928-9a5f59efdfc6'
+  const userId = localStorage.getItem('user_id')
+  const idToken = localStorage.getItem("id_token");
+
 
   const [title,       setTitle]       = useState('')
   const [description, setDescription] = useState('')
@@ -57,10 +59,15 @@ export default function CreateTask() {
 
       // 3) send JSON to your Lambda-backed POST /tasks
       const resp = await api.post(
-        '/tasks',
-        payload,
-        { headers: { 'Content-Type': 'application/json' } }
-      )
+  "/tasks",
+  payload,
+  {
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${idToken}`
+    }
+  }
+);
 
       if (resp.status === 201) {
         navigate('/tasks')
@@ -74,6 +81,15 @@ export default function CreateTask() {
       setSaving(false)
     }
   }
+
+  if (!userId) {
+  return (
+    <Container className="my-5">
+      <Alert variant="warning">You must be logged in to create a task.</Alert>
+    </Container>
+  );
+}
+
 
   return (
     <Container className="my-5">
