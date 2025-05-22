@@ -1,76 +1,94 @@
 // src/pages/CreateTask.jsx
 
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
-  Container,
-  Card,
-  Form,
-  Button,
-  Row,
-  Col,
-  Alert
-} from 'react-bootstrap';
-import api from '../api';
-import { useNavigate } from 'react-router-dom';
+  Container, Card, Form, Button,
+  Row, Col, Alert, Spinner
+} from 'react-bootstrap'
+import api from '../api'
+import { useNavigate } from 'react-router-dom'
 
 export default function CreateTask() {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
+  const userId   = '32548b14-5f37-4cf1-8928-9a5f59efdfc6'
 
-  // TODO: Replace with real logged-in user ID
-  const userId = '32548b14-5f37-4cf1-8928-9a5f59efdfc6';
+  const [title,       setTitle]       = useState('')
+  const [description, setDescription] = useState('')
+  const [dueDate,     setDueDate]     = useState('')
+  const [priority,    setPriority]    = useState('Medium')
+  const [files,       setFiles]       = useState([])     // File objects
+  const [error,       setError]       = useState(null)
+  const [saving,      setSaving]      = useState(false)
 
-  const [title, setTitle]             = useState('');
-  const [description, setDescription] = useState('');
-  const [dueDate, setDueDate]         = useState('');
-  const [files, setFiles]             = useState([]);
-  const [error, setError]             = useState(null);
-  const [saving, setSaving]           = useState(false);
+  // helper: read a File into a base64 string
+  function fileToBase64(file) {
+    return new Promise((res, rej) => {
+      const reader = new FileReader()
+      reader.onload = () => res(reader.result.split(',')[1])  // drop the "data:*/*;base64," prefix
+      reader.onerror = e => rej(e)
+      reader.readAsDataURL(file)
+    })
+  }
 
   const handleSubmit = async e => {
-    e.preventDefault();
-    setError(null);
-    setSaving(true);
+    e.preventDefault()
+    setError(null)
+    setSaving(true)
 
     try {
-      const formData = new FormData();
-      formData.append('title', title);
-      formData.append('description', description);
-      formData.append('dueDate', dueDate);
-      formData.append('userId', userId);
-      files.forEach(f => formData.append('attachments', f));
+      // 1) turn each File into { filename, fileType, data: base64 }
+      const attachments = await Promise.all(
+        files.map(async f => ({
+          filename: f.name,
+          fileType: f.type,
+          data:     await fileToBase64(f)
+        }))
+      )
 
-      const resp = await api.post('/tasks', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // 2) build a pure-JSON payload
+      const payload = {
+        title,
+        description,
+        dueDate,
+        priority,
+        userId,
+        attachments        // may be []
+      }
+
+      // 3) send JSON to your Lambda-backed POST /tasks
+      const resp = await api.post(
+        '/tasks',
+        payload,
+        { headers: { 'Content-Type': 'application/json' } }
+      )
 
       if (resp.status === 201) {
-        navigate('/tasks');
+        navigate('/tasks')
       } else {
-        throw new Error(resp.data?.error || 'Unexpected response');
+        throw new Error(resp.data?.error || 'Unexpected response')
       }
     } catch (err) {
-      setError(err.message);
+      console.error(err)
+      setError(err.message || 'Create failed')
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
   return (
     <Container className="my-5">
-      <Card className="mx-auto shadow-sm" style={{ maxWidth: '600px' }}>
-        <Card.Header as="h3" className="bg-primary text-white">
-          Create New Task
+      <Card className="mx-auto shadow-sm" style={{maxWidth:600}}>
+        <Card.Header className="bg-primary text-white">
+          <h3>Create New Task</h3>
         </Card.Header>
         <Card.Body>
           {error && <Alert variant="danger">{error}</Alert>}
-
           <Form onSubmit={handleSubmit}>
-            <Form.Group as={Row} className="mb-3" controlId="taskTitle">
+
+            <Form.Group as={Row} className="mb-3">
               <Form.Label column sm={3}>Title</Form.Label>
               <Col sm={9}>
                 <Form.Control
-                  type="text"
-                  placeholder="Enter task title"
                   value={title}
                   onChange={e => setTitle(e.target.value)}
                   required
@@ -78,18 +96,30 @@ export default function CreateTask() {
               </Col>
             </Form.Group>
 
-            <Form.Group className="mb-3" controlId="taskDescription">
+            <Form.Group className="mb-3">
               <Form.Label>Description</Form.Label>
               <Form.Control
-                as="textarea"
-                rows={4}
-                placeholder="Enter a description"
+                as="textarea" rows={4}
                 value={description}
                 onChange={e => setDescription(e.target.value)}
               />
             </Form.Group>
 
-            <Form.Group as={Row} className="mb-3" controlId="taskDueDate">
+            <Form.Group as={Row} className="mb-3">
+              <Form.Label column sm={3}>Priority</Form.Label>
+              <Col sm={9}>
+                <Form.Select
+                  value={priority}
+                  onChange={e => setPriority(e.target.value)}
+                >
+                  <option>Low</option>
+                  <option>Medium</option>
+                  <option>High</option>
+                </Form.Select>
+              </Col>
+            </Form.Group>
+
+            <Form.Group as={Row} className="mb-3">
               <Form.Label column sm={3}>Due Date</Form.Label>
               <Col sm={9}>
                 <Form.Control
@@ -100,7 +130,7 @@ export default function CreateTask() {
               </Col>
             </Form.Group>
 
-            <Form.Group className="mb-4" controlId="taskAttachments">
+            <Form.Group className="mb-4">
               <Form.Label>Attachments</Form.Label>
               <Form.Control
                 type="file"
@@ -109,25 +139,21 @@ export default function CreateTask() {
               />
               {files.length > 0 && (
                 <ul className="mt-2">
-                  {files.map((f, idx) => (
-                    <li key={idx}>{f.name}</li>
-                  ))}
+                  {files.map((f,i) => <li key={i}>{f.name}</li>)}
                 </ul>
               )}
             </Form.Group>
 
             <div className="text-end">
-              <Button
-                variant="primary"
-                type="submit"
-                disabled={saving}
-              >
-                {saving ? 'Creating…' : 'Create Task'}
+              <Button disabled={saving} type="submit">
+                {saving
+                  ? <><Spinner size="sm" animation="border"/> Creating…</>
+                  : 'Create Task'}
               </Button>
             </div>
           </Form>
         </Card.Body>
       </Card>
     </Container>
-  );
+  )
 }

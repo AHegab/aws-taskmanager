@@ -31,7 +31,7 @@ export default function TaskDetail() {
         console.log('Loading task with ID:', id);
         
         const resp = await api.get(`/tasks/${id}`);
-        console.log('raw task payload:', resp.data);
+        console.log('got task payload:', resp.data);
 
         // 1) Unwrap the envelope
         let data = resp.data;
@@ -154,9 +154,7 @@ export default function TaskDetail() {
 
         {/* Read-only fields */}
         <ListGroup className="mb-3">
-          <ListGroup.Item>
-            <strong>User ID:</strong> {task.user_id}
-          </ListGroup.Item>
+        
           <ListGroup.Item>
             <strong>Created:</strong>{' '}
             {task.created_at
