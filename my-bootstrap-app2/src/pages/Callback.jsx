@@ -110,7 +110,7 @@ export default function Callback() {
         }
 
         // at the end of your successful flow in Callback.js
-    window.location.replace('https://d1m0uvthvhxhiw.cloudfront.net');
+    window.location.replace('http://13.60.200.156:3000/');
 ;
 
       } catch (err) {
