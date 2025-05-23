@@ -109,7 +109,9 @@ export default function Callback() {
           console.error('SES verification failed:', error.response?.data || error.message);
         }
 
-        navigate('/');
+        // at the end of your successful flow in Callback.js
+    window.location.replace('https://d1m0uvthvhxhiw.cloudfront.net');
+;
 
       } catch (err) {
         console.error('Token exchange failed:', {
