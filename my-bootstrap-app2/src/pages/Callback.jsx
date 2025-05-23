@@ -4,16 +4,13 @@ import Cookies from 'js-cookie';
 import axios from 'axios';
 
 // Configuration - update these values with your actual Cognito settings
-// src/config.js
-export const COGNITO_CONFIG = {
-  domain:        'eu-north-1u8wcgtv8c.auth.eu-north-1.amazoncognito.com',
-  clientId:      '6thkk9j96oa02djeccritml1gr',
-  // hard-coded to your deployed HTTPS host:
-  redirectUri:   'https://d1m0uvthvhxhiw.cloudfront.net/callback',
+const COGNITO_CONFIG = {
+  domain: 'eu-north-1u8wcgtv8c.auth.eu-north-1.amazoncognito.com',
+  clientId: '6thkk9j96oa02djeccritml1gr',
+  redirectUri: 'http://localhost:3000/callback',
   tokenEndpoint: '/oauth2/token',
-  clientSecret:  '…'
+  clientSecret: 'fndut3no3vqopsat6vo97hnrq40vtp2891vl07be8piavi46h8h' // if confidential
 };
-
 
 export default function Callback() {
   const location = useLocation();
@@ -109,9 +106,7 @@ export default function Callback() {
           console.error('SES verification failed:', error.response?.data || error.message);
         }
 
-        // at the end of your successful flow in Callback.js
-    window.location.replace('http://16.170.172.194:3000/');
-;
+        navigate('/');
 
       } catch (err) {
         console.error('Token exchange failed:', {
