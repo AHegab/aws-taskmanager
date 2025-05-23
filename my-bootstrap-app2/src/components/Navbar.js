@@ -14,18 +14,21 @@ export default function Navbar() {
   };
 
   // Function to generate the Cognito login URL
-  const getLoginUrl = () => {
-    const baseUrl = 'https://eu-north-1u8wcgtv8c.auth.eu-north-1.amazoncognito.com/login';
-    const params = new URLSearchParams({
-      client_id: '6thkk9j96oa02djeccritml1gr',
-      response_type: 'code',
-      scope: 'email openid profile',
-      redirect_uri: encodeURIComponent('http://localhost:3000/callback'),
-      state: encodeURIComponent('http://16.170.172.194:3000') // Final destination after login
-    });
-    return `${baseUrl}?${params}`;
-  };
+const getLoginUrl = () => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const redirectUri =  'https://d1m0uvthvhvhw.cloudfront.net/callback'
 
+
+  const params = new URLSearchParams({
+    client_id: '6thkk9j96oa02djeccritml1gr',
+    response_type: 'code',
+    scope: 'email openid profile',
+    redirect_uri: encodeURIComponent(redirectUri),
+    state: encodeURIComponent( 'https://d1m0uvthvhvhw.cloudfront.net' 
+)
+  });
+  return `https://eu-north-1u8wcgtv8c.auth.eu-north-1.amazoncognito.com/login?${params}`;
+};
   return (
     <BSNavbar bg="light" expand="lg">
       <Container>
