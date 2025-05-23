@@ -1,6 +1,6 @@
 // src/pages/login.js
-import React, { useState } from 'react';
 import Cookies from 'js-cookie';
+import { useState } from 'react';
 
 const COGNITO = {
   domain:   'eu-north-1u8wcgtv8c.auth.eu-north-1.amazoncognito.com',
@@ -24,6 +24,15 @@ export default function Login() {
       password:   pass,
       scope:      'openid email profile'
     });
+    console.log('Form body:', body.toString());
+    console.log('Cognito URL:', `https://${COGNITO.domain}/oauth2/token`);
+    console.log('Cognito headers:', { 'Content-Type': 'application/x-www-form-urlencoded' });
+    console.log('Cognito body:', body.toString());
+    console.log('Cognito clientId:', COGNITO.clientId);
+    console.log('Cognito clientSecret:', COGNITO.clientSecret);
+    console.log('Cognito redirectUri:', COGNITO.redirectUri);
+    console.log('Cognito scope:', 'openid email profile');
+    console.log('Cognito response_type:', 'code');
 
     try {
       // Exchange creds for tokens
@@ -35,6 +44,7 @@ export default function Login() {
           body:    body.toString()
         }
       );
+      console.log('Response:', resp);
 
       if (!resp.ok) {
         const errText = await resp.text();
