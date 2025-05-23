@@ -38,7 +38,7 @@ export default function Navbar() {
     `client_id=6thkk9j96oa02djeccritml1gr&` +
     `response_type=code&` +
     `scope=email+openid+profile&` +
-    `redirect_uri=${encodeURIComponent('https://d1m0uvthvhxhiw.cloudfront.net/callback')}`
+    `redirect_uri=${encodeURIComponent('http://localhost:3000/callback')}`
   }
 >
   Login
