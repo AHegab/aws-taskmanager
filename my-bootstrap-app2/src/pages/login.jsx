@@ -4,59 +4,53 @@ import Cookies from 'js-cookie';
 
 const COGNITO = {
   domain:   'eu-north-1u8wcgtv8c.auth.eu-north-1.amazoncognito.com',
-  clientId: '6thkk9j96oa02djeccritml1gr',
-  clientSecret: 'fndut3no3vqopsat6vo97hnrq40vtp2891vl07be8piavi46h8h'
+  clientId: '6u4cbji12b6do75n9nkbporvmc'  // <-- TaskManager-Public
 };
 
 export default function Login() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail]     = useState('');
+  const [pass, setPass]       = useState('');
   const [error, setError]     = useState('');
 
   const onSubmit = async e => {
     e.preventDefault();
     setError('');
 
-    // 1) Build the request body WITHOUT client_secret
+    // Build the form body, including client_id but no secret:
     const body = new URLSearchParams({
       grant_type: 'password',
-      username,
-      password,
-      scope: 'openid email profile'
+      client_id:  COGNITO.clientId,
+      username:   email,
+      password:   pass,
+      scope:      'openid email profile'
     });
 
-    // 2) Build Basic auth header
-    const basicAuth = btoa(`${COGNITO.clientId}:${COGNITO.clientSecret}`);
-
     try {
-      // 3) Send the POST with the Authorization header
+      // Exchange creds for tokens
       const resp = await fetch(
         `https://${COGNITO.domain}/oauth2/token`,
         {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': `Basic ${basicAuth}`
-          },
-          body: body.toString()
+          method:  'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body:    body.toString()
         }
       );
 
       if (!resp.ok) {
-        const msg = await resp.text();
-        throw new Error(msg);
+        const errText = await resp.text();
+        throw new Error(errText);
       }
 
       const data = await resp.json();
 
-      // 4) Store tokens in cookies on this origin
-      Cookies.set('idToken',     data.id_token,     { expires:1, secure:false, sameSite:'lax' });
-      Cookies.set('accessToken', data.access_token, { expires:1, secure:false, sameSite:'lax' });
+      // Persist tokens as cookies
+      Cookies.set('idToken',     data.id_token,     { expires:1, sameSite:'lax' });
+      Cookies.set('accessToken', data.access_token, { expires:1, sameSite:'lax' });
       if (data.refresh_token) {
-        Cookies.set('refreshToken', data.refresh_token, { expires:30, secure:false, sameSite:'lax' });
+        Cookies.set('refreshToken', data.refresh_token, { expires:30, sameSite:'lax' });
       }
 
-      // 5) Redirect to home
+      // Redirect home
       window.location.href = '/';
     } catch(err) {
       console.error(err);
@@ -70,14 +64,14 @@ export default function Login() {
       <form onSubmit={onSubmit}>
         <div>
           <label>Username</label><br/>
-          <input value={username}
-                 onChange={e=>setUsername(e.target.value)} required />
+          <input value={email}
+                 onChange={e=>setEmail(e.target.value)} required />
         </div>
         <div style={{marginTop:8}}>
           <label>Password</label><br/>
           <input type="password"
-                 value={password}
-                 onChange={e=>setPassword(e.target.value)} required />
+                 value={pass}
+                 onChange={e=>setPass(e.target.value)} required />
         </div>
         <button type="submit" style={{marginTop:12}}>Login</button>
       </form>
