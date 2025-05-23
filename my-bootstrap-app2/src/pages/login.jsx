@@ -3,9 +3,10 @@ import Cookies from 'js-cookie';
 
 const COGNITO = {
   domain:   'eu-north-1u8wcgtv8c.auth.eu-north-1.amazoncognito.com',
-  clientId: '6thkk9j96oa02djeccritml1gr'
+  clientId: '6thkk9j96oa02djeccritml1gr',
+  clientSecret: 'fndut3no3vqopsat6vo97hnrq40vtp2891vl07be8piavi46h8h'
 };
-
+fndut3no3vqopsat6vo97hnrq40vtp2891vl07be8piavi46h8h
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
