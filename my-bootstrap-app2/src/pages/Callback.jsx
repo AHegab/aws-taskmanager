@@ -9,9 +9,9 @@ export const COGNITO_CONFIG = {
   domain:        'eu-north-1u8wcgtv8c.auth.eu-north-1.amazoncognito.com',
   clientId:      '6thkk9j96oa02djeccritml1gr',
   // hard-coded to your deployed HTTPS host:
-  redirectUri:   'http://localhost/callback',
+  redirectUri:   'https://d1m0uvthvhxhiw.cloudfront.net/callback',
   tokenEndpoint: '/oauth2/token',
-  clientSecret:  'fndut3no3vqopsat6vo97hnrq40vtp2891vl07be8piavi46h8h'
+  clientSecret:  '…'
 };
 
 
