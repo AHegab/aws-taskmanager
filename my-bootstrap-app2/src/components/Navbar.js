@@ -31,18 +31,18 @@ export default function Navbar() {
                 <Nav.Link onClick={handleLogout}>Logout</Nav.Link>
               </>
             ) : (
-<a
-  href="
-    https://eu-north-1u8wcgtv8c.auth.eu-north-1.amazoncognito.com/oauth2/authorize
-    ?response_type=code
-    &client_id=6thkk9j96oa02djeccritml1gr
-    &redirect_uri=https://d1m0uvthvhxhiw.cloudfront.net/callback
-    &scope=openid%20email%20profile
-  "
+<Nav.Link
+  as="a"
+  href={
+    `https://eu-north-1u8wcgtv8c.auth.eu-north-1.amazoncognito.com/login?` +
+    `client_id=6thkk9j96oa02djeccritml1gr&` +
+    `response_type=code&` +
+    `scope=email+openid+profile&` +
+    `redirect_uri=${encodeURIComponent('https://d1m0uvthvhxhiw.cloudfront.net/callback')}`
+  }
 >
-  Log In
-</a>
-
+  Login
+</Nav.Link>
             )}
           </Nav>
         </BSNavbar.Collapse>
