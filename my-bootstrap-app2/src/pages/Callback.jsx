@@ -6,7 +6,7 @@ import axios from 'axios';
 export const COGNITO_CONFIG = {
   domain: 'eu-north-1u8wcgtv8c.auth.eu-north-1.amazoncognito.com',
   clientId: '6thkk9j96oa02djeccritml1gr',
-  redirectUri: 'https://d1m0uvthvhvhw.cloudfront.net/callback', // Must match Navbar's redirect_uri
+  redirectUri: 'http://localhost:3000/callback', // Must match Navbar's redirect_uri
   tokenEndpoint: '/oauth2/token',
   clientSecret: 'fndut3no3vqopsat6vo97hnrq40vtp2891vl07be8piavi46h8h' // Replace with your actual secret
 };
