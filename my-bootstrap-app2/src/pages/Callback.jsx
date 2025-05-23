@@ -7,7 +7,7 @@ import axios from 'axios';
 const COGNITO_CONFIG = {
   domain: 'eu-north-1u8wcgtv8c.auth.eu-north-1.amazoncognito.com',
   clientId: '6thkk9j96oa02djeccritml1gr',
-  redirectUri: 'http://localhost:3000/callback',
+  redirectUri: 'http://ec2-13-61-180-35.eu-north-1.compute.amazonaws.com/callback',
   tokenEndpoint: '/oauth2/token',
   clientSecret: 'fndut3no3vqopsat6vo97hnrq40vtp2891vl07be8piavi46h8h' // if confidential
 };
