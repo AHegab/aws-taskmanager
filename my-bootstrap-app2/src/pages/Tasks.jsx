@@ -1,51 +1,58 @@
-// src/pages/Tasks.jsx
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Card, Button, Spinner, Alert, Container } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import api from '../api';
 
 export default function Tasks() {
-  const [tasks, setTasks]     = useState([]);
+  const [tasks,  setTasks]  = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
 
-  useEffect(() => {
-    async function fetchTasks() {
-      try {
-        const resp = await api.get('/tasks');
-        console.log('raw tasks payload:', resp.data);
+ const fetchTasks = useCallback(async () => {
+  setLoading(true);
+  setError(null);
 
-        let list = [];
+  try {
+    const resp = await api.get('/tasks');
+    console.log('raw tasks payload:', resp.data);
 
-        // If your backend wraps the array in a JSON-string "body"
-        if (resp.data && typeof resp.data.body === 'string') {
-          try {
-            list = JSON.parse(resp.data.body);
-          } catch (parseErr) {
-            console.error('Failed to parse body JSON', parseErr);
-            throw new Error('Invalid task data format');
-          }
-        }
-        // If resp.data already is an array
-        else if (Array.isArray(resp.data)) {
-          list = resp.data;
-        }
-        // If resp.data.tasks is the array
-        else if (resp.data && Array.isArray(resp.data.tasks)) {
-          list = resp.data.tasks;
-        }
-
-        setTasks(list);
-      } catch (err) {
-        console.error(err);
-        setError(err.message || 'Failed to load tasks');
-      } finally {
-        setLoading(false);
+    let payload = resp.data;
+    if (payload && typeof payload.statusCode === 'number') {
+      if (payload.statusCode !== 200) {
+        const errBody = JSON.parse(payload.body || '{}');
+        throw new Error(errBody.error || 'Failed to load tasks');
       }
+      payload = JSON.parse(payload.body);
     }
+
+    const list = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.tasks)
+        ? payload.tasks
+        : [];
+
+    setTasks(list);
+  } catch (err) {
+    console.error('Fetch tasks error:', err);
+    
+    if (err.code === 'ERR_NETWORK') {
+      setError('Network error - please check your connection');
+    } else if (err.response?.status === 401) {
+      setError('Session expired - please login again');
+      // Clear invalid token
+      localStorage.removeItem('idToken');
+      document.cookie = 'idToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    } else {
+      setError(err.message || 'Failed to load tasks');
+    }
+  } finally {
+    setLoading(false);
+  }
+}, []);
+
+  useEffect(() => {
     fetchTasks();
-  }, []);
+  }, [fetchTasks]);
 
   if (loading) {
     return (
@@ -58,7 +65,13 @@ export default function Tasks() {
   if (error) {
     return (
       <Container className="mt-4">
-        <Alert variant="danger">{error}</Alert>
+        <Alert variant="danger">
+          Error loading tasks<br />
+          {error}{' '}
+          <Button variant="outline-danger" size="sm" onClick={fetchTasks}>
+            Retry
+          </Button>
+        </Alert>
       </Container>
     );
   }
@@ -68,8 +81,7 @@ export default function Tasks() {
       <h2>Your Tasks</h2>
       {tasks.length === 0 ? (
         <p>
-          No tasks found.{' '}
-          <Link to="/create-task">Create one now</Link>
+          No tasks found.&nbsp;<Link to="/create-task">Create one now</Link>
         </p>
       ) : (
         <div className="row">

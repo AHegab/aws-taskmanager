@@ -1,78 +1,130 @@
-// src/pages/CreateTask.jsx
-
-import React, { useState } from 'react'
-import {
-  Container, Card, Form, Button,
-  Row, Col, Alert, Spinner
-} from 'react-bootstrap'
-import api from '../api'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react';
+import { Container, Card, Form, Button, Row, Col, Alert, Spinner } from 'react-bootstrap';
+import api from '../api';
+import { useNavigate } from 'react-router-dom';
+import Cookies from 'js-cookie';
+import { jwtDecode } from 'jwt-decode'; // Updated import
 
 export default function CreateTask() {
-  const navigate = useNavigate()
-  const userId   = '32548b14-5f37-4cf1-8928-9a5f59efdfc6'
+  const navigate = useNavigate();
+  const [userId, setUserId] = useState(null);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [priority, setPriority] = useState('Medium');
+  const [files, setFiles] = useState([]);
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [loadingUser, setLoadingUser] = useState(true);
 
-  const [title,       setTitle]       = useState('')
-  const [description, setDescription] = useState('')
-  const [dueDate,     setDueDate]     = useState('')
-  const [priority,    setPriority]    = useState('Medium')
-  const [files,       setFiles]       = useState([])     // File objects
-  const [error,       setError]       = useState(null)
-  const [saving,      setSaving]      = useState(false)
+  // Extract user ID from token on component mount
+  useEffect(() => {
+    const extractUserId = () => {
+      try {
+        const idToken = Cookies.get('idToken');
+        if (!idToken) {
+          throw new Error('No authentication token found');
+        }
 
-  // helper: read a File into a base64 string
+        const decoded = jwtDecode(idToken); // Using jwtDecode instead of jwt_decode
+        if (!decoded.sub) {
+          throw new Error('User ID not found in token');
+        }
+
+        setUserId(decoded.sub);
+        setLoadingUser(false);
+      } catch (err) {
+        console.error('Error extracting user ID:', err);
+        setError('Authentication error. Please login again.');
+        setLoadingUser(false);
+      }
+    };
+
+    extractUserId();
+  }, []);
+
   function fileToBase64(file) {
     return new Promise((res, rej) => {
-      const reader = new FileReader()
-      reader.onload = () => res(reader.result.split(',')[1])  // drop the "data:*/*;base64," prefix
-      reader.onerror = e => rej(e)
-      reader.readAsDataURL(file)
-    })
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result.split(',')[1]);
+      reader.onerror = e => rej(e);
+      reader.readAsDataURL(file);
+    });
   }
 
   const handleSubmit = async e => {
-    e.preventDefault()
-    setError(null)
-    setSaving(true)
+    e.preventDefault();
+    
+    if (!userId) {
+      setError('User not authenticated');
+      return;
+    }
+
+    setError(null);
+    setSaving(true);
 
     try {
-      // 1) turn each File into { filename, fileType, data: base64 }
       const attachments = await Promise.all(
         files.map(async f => ({
           filename: f.name,
           fileType: f.type,
-          data:     await fileToBase64(f)
+          data: await fileToBase64(f)
         }))
-      )
+      );
 
-      // 2) build a pure-JSON payload
       const payload = {
         title,
         description,
         dueDate,
         priority,
         userId,
-        attachments        // may be []
-      }
+        attachments
+      };
 
-      // 3) send JSON to your Lambda-backed POST /tasks
+      const accessToken = Cookies.get('accessToken');
       const resp = await api.post(
         '/tasks',
         payload,
-        { headers: { 'Content-Type': 'application/json' } }
-      )
+        { 
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          } 
+        }
+      );
 
       if (resp.status === 201) {
-        navigate('/tasks')
+        navigate('/tasks');
       } else {
-        throw new Error(resp.data?.error || 'Unexpected response')
+        throw new Error(resp.data?.error || 'Unexpected response');
       }
     } catch (err) {
-      console.error(err)
-      setError(err.message || 'Create failed')
+      console.error(err);
+      setError(err.message || 'Create failed');
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
+  };
+
+  if (loadingUser) {
+    return (
+      <Container className="my-5 text-center">
+        <Spinner animation="border" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </Spinner>
+        <p>Loading user information...</p>
+      </Container>
+    );
+  }
+
+  if (!userId) {
+    return (
+      <Container className="my-5">
+        <Alert variant="danger">
+          You must be logged in to create tasks. Please login first.
+        </Alert>
+      </Container>
+    );
   }
 
   return (
@@ -155,5 +207,5 @@ export default function CreateTask() {
         </Card.Body>
       </Card>
     </Container>
-  )
+  );
 }
