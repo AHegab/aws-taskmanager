@@ -38,6 +38,7 @@ export default function Login() {
       // Exchange creds for tokens
       const resp = await fetch(
         `https://${COGNITO.domain}/oauth2/token`,
+        'http://http://13.61.194.46/:4000/api/login',
         {
           method:  'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
