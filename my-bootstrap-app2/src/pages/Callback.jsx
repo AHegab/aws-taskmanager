@@ -4,13 +4,16 @@ import Cookies from 'js-cookie';
 import axios from 'axios';
 
 // Configuration - update these values with your actual Cognito settings
-const COGNITO_CONFIG = {
-  domain: 'eu-north-1u8wcgtv8c.auth.eu-north-1.amazoncognito.com',
-  clientId: '6thkk9j96oa02djeccritml1gr',
-  redirectUri: 'http://ec2-13-61-180-35.eu-north-1.compute.amazonaws.com/callback',
+// src/config.js
+export const COGNITO_CONFIG = {
+  domain:        'eu-north-1u8wcgtv8c.auth.eu-north-1.amazoncognito.com',
+  clientId:      '6thkk9j96oa02djeccritml1gr',
+  // hard-coded to your deployed HTTPS host:
+  redirectUri:   'https://d1m0uvthvhxhiw.cloudfront.net/callback',
   tokenEndpoint: '/oauth2/token',
-  clientSecret: 'fndut3no3vqopsat6vo97hnrq40vtp2891vl07be8piavi46h8h' // if confidential
+  clientSecret:  '…'
 };
+
 
 export default function Callback() {
   const location = useLocation();
