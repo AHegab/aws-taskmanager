@@ -13,19 +13,6 @@ export default function Navbar() {
     window.location.href = '/';
   };
 
-  // Function to generate the Cognito login URL
-  const getLoginUrl = () => {
-    const baseUrl = 'https://eu-north-1u8wcgtv8c.auth.eu-north-1.amazoncognito.com/login';
-    const params = new URLSearchParams({
-      client_id: '6thkk9j96oa02djeccritml1gr',
-      response_type: 'code',
-      scope: 'email openid profile',
-      redirect_uri: encodeURIComponent('http://localhost:3000/callback'),
-      state: encodeURIComponent('http://16.170.172.194:3000') // Final destination after login
-    });
-    return `${baseUrl}?${params}`;
-  };
-
   return (
     <BSNavbar bg="light" expand="lg">
       <Container>
@@ -40,15 +27,22 @@ export default function Navbar() {
           <Nav>
             {isAuthenticated ? (
               <>
+                {/* <Nav.Link as={Link} to="/profile">Profile</Nav.Link> */}
                 <Nav.Link onClick={handleLogout}>Logout</Nav.Link>
               </>
             ) : (
-              <Nav.Link
-                as="a"
-                href={getLoginUrl()}
-              >
-                Login
-              </Nav.Link>
+<Nav.Link
+  as="a"
+  href={
+    `https://eu-north-1u8wcgtv8c.auth.eu-north-1.amazoncognito.com/login?` +
+    `client_id=6thkk9j96oa02djeccritml1gr&` +
+    `response_type=code&` +
+    `scope=email+openid+profile&` +
+    `redirect_uri=${encodeURIComponent('http://localhost:3000/callback')}`
+  }
+>
+  Login
+</Nav.Link>
             )}
           </Nav>
         </BSNavbar.Collapse>
