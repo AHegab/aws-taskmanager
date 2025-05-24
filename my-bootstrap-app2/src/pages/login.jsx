@@ -1,6 +1,7 @@
+// src/components/Login.js
 import { useState } from 'react';
 
-const API_BASE = process.env.REACT_APP_API_BASE_URL;  // e.g. https://k8xh767ord.execute-api.eu-north-1.amazonaws.com/yarab
+const API_BASE = process.env.REACT_APP_API_BASE_URL;
 
 export default function Login() {
   const [email, setEmail]       = useState('');
@@ -15,19 +16,29 @@ export default function Login() {
       const resp = await fetch(`${API_BASE}/auth/token`, {
         method:      'POST',
         headers:     { 'Content-Type': 'application/json' },
-        credentials: 'include',    // ← so browser picks up the HttpOnly cookies
-        body:        JSON.stringify({ username: email, password })
+        credentials: 'include',
+        body:        JSON.stringify({ username: email, password }),
       });
-      console.log(JSON.stringify({ username: email, password }))
+
       console.log('→ API Response:', resp.status, resp.statusText);
-      console.log('→ API Response Headers:', resp.headers.get('set-cookie'));
-      console.log('→ API Response Body:', await resp.text());
+      // read the JSON once
+      const payload = await resp.json();
+      console.log('→ API Response Body:', payload);
+
       if (!resp.ok) {
-        const msg = await resp.text();
-        throw new Error(msg || resp.statusText);
+        throw new Error(payload.error || payload.message || resp.statusText);
       }
 
-      // success! tokens are in cookies
+      // payload.cookies is an array of strings like:
+      // "idToken=<longjwt>; HttpOnly; Secure; ...",
+      // "accessToken=…; HttpOnly; …", "refreshToken=…; HttpOnly; …"
+      payload.cookies.forEach(cookieString => {
+        // grab "<name>=<value>" before the first ";" and re‐set as JS cookie
+        const [nameValue] = cookieString.split(';');
+        document.cookie = `${nameValue}; Path=/;`;
+      });
+
+      // redirect on success
       window.location.href = '/';
     } catch (err) {
       console.error(err);
@@ -36,30 +47,32 @@ export default function Login() {
   };
 
   return (
-    <div style={{ maxWidth:400, margin:'2rem auto' }}>
+    <div style={{ maxWidth: 400, margin: '2rem auto' }}>
       <h2>Sign In</h2>
       <form onSubmit={onSubmit}>
         <div>
-          <label>Email</label><br/>
+          <label>Email</label><br />
           <input
             type="email"
             value={email}
             onChange={e => setEmail(e.target.value)}
-            required style={{width:'100%'}}
+            required
+            style={{ width: '100%' }}
           />
         </div>
-        <div style={{marginTop:8}}>
-          <label>Password</label><br/>
+        <div style={{ marginTop: 8 }}>
+          <label>Password</label><br />
           <input
             type="password"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            required style={{width:'100%'}}
+            required
+            style={{ width: '100%' }}
           />
         </div>
-        <button type="submit" style={{marginTop:12}}>Login</button>
+        <button type="submit" style={{ marginTop: 12 }}>Login</button>
       </form>
-      {error && <p style={{color:'red'}}>{error}</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
     </div>
   );
 }
