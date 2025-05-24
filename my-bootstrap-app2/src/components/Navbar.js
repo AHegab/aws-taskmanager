@@ -33,7 +33,7 @@ export default function Navbar() {
             ) : (
               <>
                 <Nav.Link as={Link} to="/login">Login</Nav.Link>
-                <Nav.Link as={Link} to="/register">Register</Nav.Link>
+                <Nav.Link as={Link} to="https://eu-north-1u8wcgtv8c.auth.eu-north-1.amazoncognito.com/signup?client_id=6thkk9j96oa02djeccritml1gr&redirect_uri=https%3A%2F%2Fk8xh767ord.execute-api.eu-north-1.amazonaws.com%2Fyarab%2Fauth%2Fcallback&response_type=code&scope=email+openid+profile">Register</Nav.Link>
               </>
             )}
           </Nav>
