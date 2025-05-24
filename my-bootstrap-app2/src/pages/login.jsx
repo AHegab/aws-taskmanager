@@ -1,88 +1,61 @@
-// src/pages/login.js
-import Cookies from 'js-cookie';
 import { useState } from 'react';
 
-const COGNITO = {
-  domain:   'eu-north-1u8wcgtv8c.auth.eu-north-1.amazoncognito.com',
-  clientId: '6u4cbji12b6do75n9nkbporvmc'  // <-- TaskManager-Public
-};
+const API_BASE = process.env.REACT_APP_API_BASE_URL;  // e.g. https://k8xh767ord.execute-api.eu-north-1.amazonaws.com/yarab
 
 export default function Login() {
-  const [email, setEmail]     = useState('');
-  const [pass, setPass]       = useState('');
-  const [error, setError]     = useState('');
+  const [email, setEmail]       = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError]       = useState('');
 
   const onSubmit = async e => {
     e.preventDefault();
     setError('');
 
-    // Build the form body, including client_id but no secret:
-    const body = new URLSearchParams({
-      grant_type: 'password',
-      client_id:  COGNITO.clientId,
-      username:   email,
-      password:   pass,
-      scope:      'openid email profile'
-    });
-    console.log('Form body:', body.toString());
-    console.log('Cognito URL:', `https://${COGNITO.domain}/oauth2/token`);
-    console.log('Cognito headers:', { 'Content-Type': 'application/x-www-form-urlencoded' });
-    console.log('Cognito body:', body.toString());
-    console.log('Cognito clientId:', COGNITO.clientId);
-    console.log('Cognito clientSecret:', COGNITO.clientSecret);
-    console.log('Cognito redirectUri:', COGNITO.redirectUri);
-    console.log('Cognito scope:', 'openid email profile');
-    console.log('Cognito response_type:', 'code');
-
     try {
-      // Exchange creds for tokens
-      const resp = await fetch(
-        `https://${COGNITO.domain}/oauth2/token`,
-        'http://http://13.61.194.46/:4000/api/login',
-        {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body:    body.toString()
-        }
-      );
-      console.log('Response:', resp);
-
+      const resp = await fetch(`${API_BASE}/auth/token`, {
+        method:      'POST',
+        headers:     { 'Content-Type': 'application/json' },
+        credentials: 'include',    // ← so browser picks up the HttpOnly cookies
+        body:        JSON.stringify({ username: email, password })
+      });
+      console.log(JSON.stringify({ username: email, password }))
+      console.log('→ API Response:', resp.status, resp.statusText);
+      console.log('→ API Response Headers:', resp.headers.get('set-cookie'));
+      console.log('→ API Response Body:', await resp.text());
       if (!resp.ok) {
-        const errText = await resp.text();
-        throw new Error(errText);
+        const msg = await resp.text();
+        throw new Error(msg || resp.statusText);
       }
 
-      const data = await resp.json();
-
-      // Persist tokens as cookies
-      Cookies.set('idToken',     data.id_token,     { expires:1, sameSite:'lax' });
-      Cookies.set('accessToken', data.access_token, { expires:1, sameSite:'lax' });
-      if (data.refresh_token) {
-        Cookies.set('refreshToken', data.refresh_token, { expires:30, sameSite:'lax' });
-      }
-
-      // Redirect home
+      // success! tokens are in cookies
       window.location.href = '/';
-    } catch(err) {
+    } catch (err) {
       console.error(err);
-      setError('Login failed: ' + err.message);
+      setError(err.message);
     }
   };
 
   return (
-    <div style={{maxWidth:400,margin:'2rem auto'}}>
+    <div style={{ maxWidth:400, margin:'2rem auto' }}>
       <h2>Sign In</h2>
       <form onSubmit={onSubmit}>
         <div>
-          <label>Username</label><br/>
-          <input value={email}
-                 onChange={e=>setEmail(e.target.value)} required />
+          <label>Email</label><br/>
+          <input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required style={{width:'100%'}}
+          />
         </div>
         <div style={{marginTop:8}}>
           <label>Password</label><br/>
-          <input type="password"
-                 value={pass}
-                 onChange={e=>setPass(e.target.value)} required />
+          <input
+            type="password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required style={{width:'100%'}}
+          />
         </div>
         <button type="submit" style={{marginTop:12}}>Login</button>
       </form>
